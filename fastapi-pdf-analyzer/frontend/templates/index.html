@@ -1,0 +1,28 @@
+<!-- frontend/templates/index.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>PDF Analyzer</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    #status { margin-top: 1em; font-weight: bold; }
+    #download-btn { margin-top: 1em; }
+  </style>
+</head>
+<body>
+  <h1>Анализ PDF-документа</h1>
+  <form id="upload-form">
+    <label>Выберите PDF-файл:
+      <input type="file" id="pdf-file" name="file" accept="application/pdf" required />
+    </label>
+    <button type="submit">Загрузить</button>
+  </form>
+
+  <div id="status"></div>
+  <button id="download-btn" style="display:none;">Скачать результат (JSON)</button>
+
+  <!-- Подключение JavaScript -->
+  <script src="/static/script.js"></script>
+</body>
+</html>

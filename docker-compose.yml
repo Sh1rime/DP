@@ -1,0 +1,43 @@
+# docker-compose.yml
+version: "3.8"
+services:
+  web:
+    build: .
+    container_name: pdf_web
+    ports:
+      - "8000:8000"
+    volumes:
+      - upload_data:/app/data    # общий том для сохраненных PDF и результатов (если нужно)
+    depends_on:
+      - redis
+    environment:
+      # Переменные окружения (если нужны, например логирование или URL брокера, можно опустить если хардкод)
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+  worker:
+    build: .
+    container_name: pdf_worker
+    volumes:
+      - upload_data:/app/data    # монтируем ту же volume, чтобы воркер имел доступ к файлам
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    # Переопределяем команду: запуск Celery воркера
+    command: celery -A backend.tasks worker --loglevel=info
+
+  redis:
+    image: redis:7-alpine
+    container_name: pdf_redis
+    ports:
+      - "6379:6379"
+    # Для простоты конфигурация по умолчанию, без persistence
+    volumes:
+      - redis_data:/data
+
+# Volume declarations
+volumes:
+  upload_data:
+  redis_data:
