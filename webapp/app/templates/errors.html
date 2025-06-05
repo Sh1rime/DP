@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Отчёт об ошибках | Интеллектуальный анализ</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}"/>
+  <style>
+    /* ── макет ────────────────────────────── */
+    .topbar{background:#222;color:#fff;padding:12px 24px;display:flex;justify-content:space-between}
+    .topbar a{color:#1a73e8;text-decoration:none}
+    .viewer{display:flex;height:calc(100vh - 64px)}
+    .pages {flex:1.4;overflow-y:auto;padding:0 20px}
+    .report{flex:1;border-left:2px solid #eee;overflow-y:auto;padding:20px}
+
+    /* ── превью ───────────────────────────── */
+    .page{position:relative;margin-bottom:40px}
+    .page img{width:100%;border:1px solid #ccc;border-radius:6px;display:block}
+    .mark{position:absolute;border:2px solid rgba(255,0,0,.8);border-radius:3px;cursor:pointer}
+    .mark span{background:rgba(255,0,0,.9);color:#fff;font-size:.75rem;padding:0 4px;border-bottom-left-radius:3px}
+    .mark.active{box-shadow:0 0 0 3px rgba(255,255,0,.9) inset}
+
+    /* ── карточки отчёта ──────────────────── */
+    details{border:1px solid #ddd;border-radius:6px;margin-bottom:10px}
+    summary{padding:8px 12px;list-style:none;cursor:pointer;font-weight:500;display:flex;align-items:center;gap:8px}
+    summary .badge{background:#ff5252;color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem}
+    summary .mult{font-size:.75rem;color:#555}
+    details[open]>summary{background:#f8f8f8}
+    details.active>summary{background:#fff7d6}
+
+    table{width:100%;border-collapse:collapse;font-size:.9rem;margin-bottom:6px}
+    th,td{padding:4px 6px;border:1px solid #efefef;vertical-align:top}
+    th{background:#fafafa;font-weight:500;white-space:nowrap}
+
+    .field{color:#555;text-align:right}
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div>Отчёт об ошибках в документе</div>
+  <a href="/">← Назад к загрузке</a>
+</header>
+
+<div class="viewer">
+  <div class="pages"  id="pages"></div>
+  <div class="report">
+    <h2 style="margin-top:0">Страница&nbsp;<span id="curPage">1</span></h2>
+    <div id="items"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- данные от сервера ---------- */
+const pagesRaw = {{ errors | tojson }};
+const previewBase = "{{ preview_uri }}";   // /static/uploads/<job>/previews
+
+/* ---------- утилита группировки ---------- */
+function groupErrors(pg){
+  const map = {};
+  pg.errors.forEach(err=>{
+    const key = JSON.stringify(err.bbox);
+    (map[key] ??= {bbox: err.bbox, list: []}).list.push(err);
+  });
+  return Object.values(map);
+}
+
+/* ---------- DOM-кэш ---------- */
+const pagesEl = document.getElementById('pages');
+const itemsEl = document.getElementById('items');
+const curEl   = document.getElementById('curPage');
+
+/* ---------- helpers ---------- */
+function activate(id){
+  document.querySelectorAll('.mark, details').forEach(n=>n.classList.remove('active'));
+  document.querySelector(`.mark[data-id="${id}"]`)   ?.classList.add('active');
+  document.querySelector(`details[data-id="${id}"]`) ?.classList.add('active');
+}
+
+/* ---------- рендер отчёта ---------- */
+function renderReport(pg){
+  curEl.textContent = pg.page;
+  itemsEl.innerHTML = '';
+  groupErrors(pg).forEach((grp,idx)=>{
+    const id = `p${pg.page}-g${idx}`;
+    const det = document.createElement('details');
+    det.dataset.id = id;
+
+    /* заголовок */
+    const sum = document.createElement('summary');
+    sum.innerHTML =
+      `<span class="badge">${idx+1}</span>`+
+      `<span><strong>Блок ${idx+1}</strong> — ошибок: ${grp.list.length}</span>`;
+    det.appendChild(sum);
+
+    /* таблица ошибок в группе */
+    grp.list.forEach((e,j)=>{
+      const tbl = document.createElement('table');
+      const addRow = (k,v)=>{ if(v) tbl.insertRow().innerHTML=`<th class="field">${k}</th><td>${v}</td>`; };
+      const usefulRepl = (e.replacements || []).filter(r => r.trim() && r !== e.error_text);
+      addRow('Текст',       e.error_text && e.error_text.trim() ? e.error_text : '');
+      addRow('Тип ошибки', e.message);
+      addRow('Кратко', e.shortMessage);
+      addRow('Исправления', usefulRepl.length ? usefulRepl.join(', ') : '');
+      addRow('Контекст', e.context?.replace(/\n/g,' ⏎ '));
+      det.appendChild(tbl);
+      if(j!==grp.list.length-1) det.appendChild(document.createElement('hr'));
+    });
+
+    /* клик по карточке → выделить рамку */
+    det.addEventListener('click',ev=>{
+      ev.stopPropagation();
+      document.querySelector(`.mark[data-id="${id}"]`)
+              ?.scrollIntoView({behavior:'smooth',block:'center'});
+      activate(id);
+    });
+
+    itemsEl.appendChild(det);
+  });
+}
+
+/* ---------- рендер страниц ---------- */
+pagesRaw.forEach(pg=>{
+  const wrap = document.createElement('div');
+  wrap.className='page'; wrap.dataset.page=pg.page;
+
+  const img = document.createElement('img');
+  img.src   = `${previewBase}/page_${pg.page}.png`;
+  wrap.appendChild(img);
+
+  img.addEventListener('load',()=>{
+    const scale = img.clientWidth / img.naturalWidth;
+    groupErrors(pg).forEach((grp,idx)=>{
+      const id = `p${pg.page}-g${idx}`;
+      const m  = document.createElement('div');
+      m.className='mark'; m.dataset.id=id;
+      const [x1,y1,x2,y2]=grp.bbox;
+      Object.assign(m.style,{
+        left:(x1*scale)+'px',top:(y1*scale)+'px',
+        width:((x2-x1)*scale)+'px',height:((y2-y1)*scale)+'px'
+      });
+      const badge=document.createElement('span');
+      badge.textContent = idx+1;
+      m.appendChild(badge);
+
+      /* навигация */
+      ['click','mouseenter'].forEach(ev=>m.addEventListener(ev,()=>{
+        activate(id);
+        if(ev==='click'){
+          document.querySelector(`details[data-id="${id}"]`)
+                  ?.scrollIntoView({behavior:'smooth',block:'nearest'});
+        }
+      }));
+      wrap.appendChild(m);
+    });
+  });
+  pagesEl.appendChild(wrap);
+});
+
+/* ---------- синхронизация при прокрутке ---------- */
+pagesEl.addEventListener('scroll',()=>{
+  const mid=window.innerHeight/2;
+  const visible=[...pagesEl.children].filter(p=>p.getBoundingClientRect().top<mid);
+  if(visible.length){
+    const pg=pagesRaw.find(p=>p.page==visible.at(-1).dataset.page);
+    if(pg.page!=curEl.textContent) renderReport(pg);
+  }
+});
+
+/* стартовая страница */
+renderReport(pagesRaw[0]);
+</script>
+</body>
+</html>

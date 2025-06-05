@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Интеллектуальный анализ строительных проектов</title>
+
+  <!-- основной CSS вашего проекта -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}"/>
+
+  <!-- небольшой inline-CSS только для спиннера -->
+  <style>
+    .spinner{
+      display:none;position:fixed;inset:0;
+      background:rgba(255,255,255,.85);z-index:9999;
+      align-items:center;justify-content:center;
+      font:1rem/1.3 "Roboto",Arial,Helvetica,sans-serif;
+    }
+    body.loading .spinner{display:flex}
+    body.loading main{filter:blur(2px);pointer-events:none}
+  </style>
+</head>
+<body>
+
+  <!-- ── ХЕДЕР ──────────────────────────────────────────────── -->
+  <header class="site-header">
+    <div class="container">
+      <h1>Интеллектуальный анализ строительных проектов</h1>
+      <p>Передовые методы ИИ для разбора и&nbsp;проверки строительных PDF-документов</p>
+    </div>
+  </header>
+
+  <!-- ── ОСНОВНОЙ КОНТЕНТ ───────────────────────────────────── -->
+  <main class="container">
+    <!-- блок загрузки -->
+    <section class="upload-section">
+      <h2>Загрузите ваш PDF-чертёж</h2>
+
+      <!-- action оставляем /api/upload – это не мешает JS -->
+      <form id="upload-form" action="/api/upload" method="post" enctype="multipart/form-data">
+        <div class="drop-zone" id="drop-zone">
+          <span class="drop-zone__prompt">
+            Перетащите файл сюда или&nbsp;нажмите, чтобы выбрать
+          </span>
+          <input type="file" name="file" accept="application/pdf" class="drop-zone__input" required>
+        </div>
+        <button type="submit" class="btn-primary">Начать анализ</button>
+      </form>
+    </section>
+
+    <!-- описание проекта -->
+    <section class="description-section">
+      <h2>О проекте</h2>
+      <p>Наша платформа объединяет лучшие практики моделей&nbsp;ИИ.</p>
+      <ul>
+        <li>Извлечение текстов и&nbsp;аннотаций;</li>
+        <li>Подсветка несоответствий;</li>
+        <li>Распознавание таблиц и&nbsp;спецификаций;</li>
+        <li>Обработка графики: планы, схемы, разрезы;</li>
+        <li>Автогенерация отчётов.</li>
+      </ul>
+      <p>Экономьте время и&nbsp;получайте структурированные данные из PDF.</p>
+    </section>
+  </main>
+
+  <!-- футер -->
+  <footer class="site-footer">
+    <div class="container">
+      <p>© 2025&nbsp;СтройАналитика — интеллектуальный анализ чертежей</p>
+    </div>
+  </footer>
+
+  <!-- СПИННЕР -->
+  <div class="spinner">Файл обрабатывается, пожалуйста подождите…</div>
+
+  <!-- ── СКРИПТЫ ────────────────────────────────────────────── -->
+  <script>
+  /* === DRAG-N-DROP + ВЫБОР ФАЙЛА ================================= */
+  const dz  = document.getElementById('drop-zone');
+  const inp = dz.querySelector('.drop-zone__input');
+
+  // 1) предотвращаем повторное открытие диалога
+  inp.addEventListener('click', e => e.stopPropagation());
+  dz.addEventListener('click', () => inp.click());
+
+  // 2) показываем имя файла
+  function showName(name){
+    dz.classList.add('drop-zone--filled');
+    dz.querySelector('.drop-zone__prompt').textContent = name;
+  }
+  inp.addEventListener('change', () => {
+    if (inp.files.length) showName(inp.files[0].name);
+  });
+
+  // 3) события drag
+  dz.addEventListener('dragover', e=>{
+    e.preventDefault(); dz.classList.add('drop-zone--over');
+  });
+  ['dragleave','dragend'].forEach(ev =>
+    dz.addEventListener(ev, ()=> dz.classList.remove('drop-zone--over'))
+  );
+  dz.addEventListener('drop', e=>{
+    e.preventDefault();
+    if (e.dataTransfer.files.length){
+      inp.files = e.dataTransfer.files;
+      showName(inp.files[0].name);
+    }
+    dz.classList.remove('drop-zone--over');
+  });
+
+  /* === ОТПРАВКА ФОРМЫ ========================================= */
+  document.getElementById('upload-form').addEventListener('submit', async e=>{
+    e.preventDefault();
+    if (!inp.files.length) return alert('Выберите PDF-файл');
+
+    document.body.classList.add('loading');            // показываем спиннер
+    try{
+      const fd  = new FormData(e.target);
+      const res = await fetch('/api/upload', { method:'POST', body: fd });
+      if (!res.ok) throw new Error('HTTP '+res.status);
+      const id  = (await res.text()).trim();
+      if (!id)   throw new Error('Сервер вернул пустой id');
+      window.location.href = `/errors/${id}`;          // редирект на страницу отчёта
+    }catch(err){
+      console.error(err);
+      alert('Не удалось обработать файл. Попробуйте позднее.');
+      document.body.classList.remove('loading');
+    }
+  });
+  </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Результаты анализа</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}"/>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <h1>Результаты анализа</h1>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="result-section">
+      <h2>Данные из PDFParser</h2>
+      <pre>{{ parsed | tojson(indent=2, ensure_ascii=False) }}</pre>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© 2025 СтройАналитика</p>
+    </div>
+  </footer>
+</body>
+</html>

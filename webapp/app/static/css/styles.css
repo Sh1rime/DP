@@ -1,0 +1,129 @@
+/* Общие стили */
+body {
+  margin: 0;
+  font-family: "Roboto", sans-serif;
+  background: #eef2f5;
+  color: #333;
+}
+.container {
+  max-width: 800px;
+  margin: auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Хедер */
+.site-header {
+  background:url('../img/backhead.jpg') no-repeat center/cover;
+  color: #fff;
+  padding: 60px 0;
+  text-align: center;
+}
+.site-header h1 {
+  margin: 0 0 10px;
+  font-size: 2.5rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+}
+.site-header p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* Секция загрузки */
+.upload-section {
+  background: #fff;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  margin-top: -30px;
+  text-align: center;
+}
+.upload-section h2 {
+  margin-top: 0;
+  color: #1a73e8;
+}
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+/* Drop-Zone */
+.drop-zone {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  padding: 60px 20px;
+  margin: 0 auto 20px;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  background: #fafafa;
+}
+.drop-zone--over {
+  background: #f0f8ff;
+  border-color: #1a73e8;
+}
+.drop-zone--filled {
+  border-style: solid;
+}
+.drop-zone__prompt {
+  font-size: 1rem;
+  color: #666;
+}
+.drop-zone__input {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Кнопка отправки */
+.btn-primary {
+  background: #1a73e8;
+  color: #fff;
+  font-size: 1rem;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.btn-primary:hover {
+  background: #1558b0;
+}
+
+/* Описание проекта */
+.description-section {
+  background: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  margin-top: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.description-section h2 {
+  margin-top: 0;
+  color: #333;
+}
+.description-section ul {
+  padding-left: 20px;
+  margin: 10px 0;
+}
+.description-section li {
+  margin-bottom: 8px;
+}
+
+/* Футер */
+.site-footer {
+  text-align: center;
+  padding: 20px 0;
+  background: #eceff1;
+  margin-top: 40px;
+}
+.site-footer p {
+  margin: 0;
+  color: #555;
+}
